@@ -8,20 +8,34 @@ import { matchService, recommendService, handleApiError } from '@/src/services/a
 export default function MatchPage() {
   const [matches, setMatches] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendationStats, setRecommendationStats] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const featureDescriptions: Record<string, string> = {
+    urgency_deadline_interaction: 'Combined urgency and deadline pressure; critical short deadlines get the biggest boost.',
+    urgency_score: 'Maps request urgency from low to critical, where critical has highest priority.',
+    deadline_tightness: 'Inversely scales the deadline; shorter deadlines are treated as more urgent.',
+    category_score: 'Scores the resource category by medical importance for prioritization.',
+    quantity_norm: 'Normalizes request quantity so very large orders do not dominate the score.',
+    days_posted: 'Older unresolved requests gain a small priority boost over time.',
+    staleness_boost: 'Adds extra urgency for requests older than 3 days.',
+    item_priority: 'Item-level criticality score tied to the resource category.',
+  };
 
   const fetchData = async () => {
     setError(null);
     setIsLoading(true);
     try {
-      const [matchResponse, recommendResponse] = await Promise.all([
+      const [matchResponse, recommendResponse, statsResponse] = await Promise.all([
         matchService.getMatches(),
         recommendService.getRecommendations(),
+        recommendService.getStats(),
       ]);
 
       setMatches(matchResponse.data?.matches || []);
       setRecommendations(recommendResponse.data?.recommendations || []);
+      setRecommendationStats(statsResponse.data || null);
     } catch (err) {
       const message = handleApiError(err);
       setError(typeof message === 'string' ? message : JSON.stringify(message));
@@ -75,9 +89,76 @@ export default function MatchPage() {
         />
       ) : (
         <>
-          <div className="mb-8 flex items-center justify-between gap-4 text-sm text-slate-500">
-            <span>{matches.length} smart matches retrieved</span>
-            <span>{recommendations.length} recommendations available</span>
+          <div className="mb-8 grid gap-4 md:grid-cols-[1fr_auto] items-start">
+            <div className="space-y-2 text-sm text-slate-500">
+              <span>{matches.length} smart matches retrieved</span>
+              <span>{recommendations.length} recommendations available</span>
+            </div>
+            {recommendationStats ? (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 shadow-sm">
+                <div className="mb-3 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold">Model Summary</div>
+                <div className="grid gap-2">
+                  <div className="flex justify-between gap-4">
+                    <span>Model</span>
+                    <strong>{recommendationStats.model_type || 'RandomForestRegressor'}</strong>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>Test RMSE</span>
+                    <strong>{recommendationStats.test_rmse ?? 'N/A'}</strong>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>Test R²</span>
+                    <strong>{recommendationStats.test_r2 ?? 'N/A'}</strong>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span>CV R²</span>
+                    <strong>{recommendationStats.cv_r2_mean ? `${recommendationStats.cv_r2_mean} ± ${recommendationStats.cv_r2_std}` : 'N/A'}</strong>
+                  </div>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-200">
+                  <div className="mb-3 text-xs uppercase tracking-[0.24em] text-slate-500 font-semibold">Feature Importance</div>
+                  <div className="space-y-3">
+                    {Object.entries(recommendationStats.feature_importances || {})
+                      .sort((a, b) => (b[1] as number) - (a[1] as number))
+                      .slice(0, 6)
+                      .map(([feature, importance]) => {
+                        const descriptions: Record<string, string> = {
+                          urgency_deadline_interaction: 'Combined urgency and deadline pressure; critical short deadlines are weighted highest.',
+                          urgency_score: 'Urgency level mapping from low to critical.',
+                          deadline_tightness: 'Shorter deadlines are treated as more urgent.',
+                          category_score: 'Item category importance based on medical criticality.',
+                          quantity_norm: 'Normalized quantity so large requests do not dominate scores.',
+                          days_posted: 'Requests gain priority the longer they remain open.',
+                          staleness_boost: 'Older requests get a small extra urgency boost.',
+                          item_priority: 'Item-level importance based on resource type.',
+                        };
+                        const description = descriptions[feature] || '';
+                        return (
+                          <div key={feature} className="space-y-2">
+                            <div className="flex justify-between text-xs text-slate-600">
+                              <span title={description}>{feature.replace(/_/g, ' ')}</span>
+                              <span>{(importance as number).toFixed(2)}</span>
+                            </div>
+                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-600 rounded-full"
+                                style={{ width: `${Math.min((importance as number) * 100, 100)}%` }}
+                              />
+                            </div>
+                            {description && (
+                              <div className="text-2xs text-slate-400">{description}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                Loading model performance...
+              </div>
+            )}
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {recommendations.map((item, index) => (

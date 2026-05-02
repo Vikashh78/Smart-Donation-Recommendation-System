@@ -68,4 +68,5 @@ export const matchService = {
 
 export const recommendService = {
   getRecommendations: () => api.get('/recommend'),
+  getStats: () => api.get('/recommend/stats'),
 };

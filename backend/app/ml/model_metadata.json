@@ -1,0 +1,59 @@
+{
+  "model_type": "RandomForestRegressor",
+  "n_estimators": 150,
+  "training_samples": 1600,
+  "test_rmse": 2.044,
+  "test_r2": 0.989,
+  "cv_r2_mean": 0.987,
+  "cv_r2_std": 0.0,
+  "feature_importances": {
+    "deadline_tightness": 0.7953,
+    "urgency_deadline_interaction": 0.169,
+    "urgency_score": 0.0298,
+    "quantity_norm": 0.0026,
+    "days_posted": 0.0018,
+    "category_score": 0.0009,
+    "item_priority": 0.0003,
+    "staleness_boost": 0.0002
+  },
+  "features": [
+    "urgency_score",
+    "deadline_tightness",
+    "category_score",
+    "item_priority",
+    "quantity_norm",
+    "urgency_deadline_interaction",
+    "staleness_boost",
+    "days_posted"
+  ],
+  "urgency_map": {
+    "low": 1,
+    "medium": 2,
+    "high": 3,
+    "critical": 4
+  },
+  "deadline_map": {
+    "2 hours": 2,
+    "today": 8,
+    "1 day": 24,
+    "3 days": 72
+  },
+  "item_categories": {
+    "Oxygen Concentrator": "medical_equipment",
+    "Ventilator": "medical_equipment",
+    "ICU Bed": "medical_equipment",
+    "Defibrillator": "medical_equipment",
+    "Surgical Gloves": "consumables",
+    "N95 Masks": "consumables",
+    "Syringes": "consumables",
+    "IV Drip Set": "consumables",
+    "Blood Pressure Monitor": "diagnostic",
+    "Glucometer": "diagnostic",
+    "Insulin": "medication",
+    "Antibiotics": "medication",
+    "Paracetamol": "medication",
+    "Saline Solution": "consumables",
+    "Wheelchair": "support",
+    "Crutches": "support"
+  }
+}
