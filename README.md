@@ -86,7 +86,7 @@ Priority Score (0–100)
 📦 Installation & Setup
 
 1️⃣ Clone the repository
-git clone https://github.com/your-username/smart-donation-system.git
+git clone https://github.com/Vikashh78/Smart-Donation-Recommendation-System.git
 cd smart-donation-system
 
 2️⃣ Backend Setup
